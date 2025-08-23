@@ -2,8 +2,7 @@
 # AUTHOR: Aleksashko
 # REPO: https://github.com/
 # UPDATED: 2025-08-23 00:24 MSK
-# SOURCE: https://github.com/verakso-hub/verakso/ShadowRocket_Rus_domains.list
-# https://github.com/verakso-hub/Verakso/blob/83a30852d4f978fadf7648cda019be58df3141dd/ShadowRocket_Rus_domains.list
+# SOURCE: https://github.com/verakso-hub/Verakso/blob/main/ShadowRocket_Rus_domains.list
 
 DOMAIN-SUFFIX,Russia.ru
 DOMAIN-SUFFIX,avtodor-tr.ru
