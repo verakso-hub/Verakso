@@ -1,0 +1,140 @@
+IMEI: 359954315328828 - старый модем
+IMEI: 359954315328828 - новый модем
+
+В программе Terminal выбираем рабочий порт, жмем "закрыт"
+проверяем доступен ли модем на этом порту командой ati
+
+AT^PCIEMODE=0
+AT^CUSTOMER=14
+прошиваем модем на новую прошивку
+
+AT^PCIEMODE=0
+AT^CUSTOMER=5
+AT+USBSWITCH=00B7 (или 9025)
+В прошивке F0.6.0.0.6.056 нет композиций 00B7, добавим вручную через ADB из папки compositions (может потребоваться установить adb-setup-143.exe), путем запуска go.cmd композиции Install_00B7+ADB
+
+AT+GPS=0
+AT^SBFS=0
+AT+FOTA_SWITCH=0
+
+AT^EFS="/POLICYMAN/CARRIER_POLICY.XML",0
+AT^EFS="/POLICYMAN/POLICIES.XML",0
+
+AT+CPMS="SM","SM","SM" - в дальнейшем повторить, если будут проблемы с смс
+at^qtuner_enable=0 - помогает, когда не видит сеть.
+
+Убираем все лишнее
+at^efs="/policyman/carrier_policy.xml",0 
+at^efs="/policyman/policies.xml",0
+at^efs="/policyman/lte_feature_restrictions.xml",0
+at^efs="/policyman/us_fcc_band_restrictions.xml",0
+at^efs="/nv/item_files/modem/lte/rrc/lte_feature_ca.xml",0
+at^efs="/nv/item_files/modem/lte/rrc/PC2_WHITELIST.xml",0
+at^efs="/nv/item_files/modem/lte/rrc/PC2_WHITELIST.xml_Subscription01",0
+at^efs="/nv/item_files/modem/lte/rrc/cap/disable_gap_less_meas",0
+at^efs="/nv/item_files/modem/lte/common/ca_disable",0
+
+Удаление Band_Pri (тоже можно на всякий сделать, хуже не будет)
+at^efs="/nv/item_files/modem/lte/rrc/efs/band_priority_list_v2",0
+
+Перезагрузка:
+AT+cfun=1,1
+
+Установка imei
+at^nv=550,"0" - затирает имеющийся imei
+Слева от сгенерированного imei дописываем 80A, получается 80A358876622829191
+Разбиваем цифры по парам: 80 A3 58 87 66 22 82 91 91
+Меняем цифры местами в каждой паре: 08,3a,85,78,66,22,28,19,19
+Далее передаём команду в терминале: AT^NV=550,9,"08,3a,85,78,66,22,28,19,19"
+at+cfun=1,1 перезагрузка модема
+В модем зашил imei от iPhone 16pro, созданный генератором имей
+
+Для windows изначально рекомендовано:
+AT^CUSTOMER=0
+AT+USBSWITCH=00B3
+
+Для OpenWRT, Keenetic рекомендовано
+AT^CUSTOMER=5
+AT+USBSWITCH=00B7
+Но и с этими параметрами можно использовать модем и под Windows:
+1. Устанавливаем драйвера Qualcomm: Qualcomm_USB_Driver_v1.0.10065.1
+2. Устанавливаем драйвера Quectel: Quectel_Windows_USB_Driver(Q)_NDIS_V2.6.0   (Отключаем проверку подписи драйверов, если надо. как это сделать для своей OS можно найти в интернете)
+3. В диспетчере устройств для "Generic Mobile Broadband Adapter" ставим вручную драйверы: обновить драйвер - Найти на этом компьютере - выбрать драйвер из списка доступных
+Сведения - ИД устройства - USB\VIDxxxxxMI_01 (02 и 03). По последней цифре ставим AT\NMEA\DM. (может и не важно, но так точно соответсвует инструкции)
+"Порты (Com и Ltp)" - Quectel: 01 - AT port, 02 - NMEA port, 03 -  DM port (diagnostic)
+Для RmNet - "Сетевые адаптеры": Quectel - Quectel Wireless Ethernet Adapter
+ИД оборудования можно сверять по по скриншотам: Выбор драйверов 1-2
+ссылка на инструкцию https://telegra.ph/Foxconn-T99W175--Dell-DW5930-MV31-W-Rev-30-08-06
+
+Доп команды:
+Выбор сим-карт(переключение). Есим пока можно залить только в Windows 10/11:
+at^switch_slot?  - какая sim карта активна 
+at^switch_slot=0 - SIM1
+at^switch_slot=1 - eSIM (SIM2)
+
+AT^CA_ENABLE? - проверка работоспособность агрегации (в принципе работает модем с агрегацией или превращён в кат4)
+AT^CA_INFO? - вывод агрегации 
+AT^BAND_PREF? - какие частоты выбраны
+AT^BAND_PREF - выбрать все частоты по умолчанию
+AT^BAND_PREF=LTE,2,1,3 - выбрать LTE Band 1, 3
+AT^DEBUG? - вывод информации по Serving Cell и Scell (выводится точная информация на всех прошивках)
+ATI - Какая установлена прошивка и модель.
+AT^TEMP? - выводит температуру
+
+Прописать номер телефона в сим-карту
+at$qcpbmpref=1
+at+cpbs="on"
+at+cpbw=1,"+79995xxxx05",145
+Номер свой вписать
+
+
+Установка композиций OOB7 00B3 возможна путем запуска сценария, файла "go.cmd" в папке с нужной композицией
+или
+Установка adb и композиций OOB7 00B3 через Homebrew
+В MacOs в терминале:
+Устанавливаем Homebrew
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+Run these commands in your terminal to add Homebrew to your PATH: - поочередно скопировать из терминала команды
+    echo >> /Users/aleksashko/.zprofile
+    echo 'eval "$(/usr/local/bin/brew shellenv)"' >> /Users/aleksashko/.zprofile
+    eval "$(/usr/local/bin/brew shellenv)"
+Устанавливаем ADB
+brew install android-platform-tools
+adb version
+adb devices
+В папку Downloads/1 скопировал compositions файлы 00B3 00B7
+cd downloads/1/
+adb shell
+cd /sbin/
+ls
+cd usb
+cd compositions
+mount -o remount,rw /
+ls
+Exit
+adb push 00B3 /sbin/usb/compositions/
+adb push 00B7 /sbin/usb/compositions/
+adb shell
+cd /sbin/usb/compositions
+ls
+ls -la
+chmod 755 00B*
+ls -la
+Проверяем, должно быть:
+-rwxr-xr-x    1 root     root          4652 May  9  2024 00B3
+-rwxr-xr-x    1 root     root          2928 May  8  2024 00B7
+
+     Инструкция по установке пакетов для модема T99W175 на OpenWRT (Пакеты_T99W175+TTL+Hotplug.doc)
+Данные действия производились после прошивки от Санты кустомер=5, композиция 9025 (00B7)
+https://www.youtube.com/watch?v=fLz_ewJTVMQ&list=LL&index=20&t=600s
+  Добавляем репозиторий modemfeed
+wget -qO- https://openwrt.132lan.ru/packages/24.10/packages/add.sh | sh
+opkg update
+если opkg update ругается, в /etc/opkg.conf закоментить строку
+# option check_signature
+  Установка пакетов
+opkg install usbutils
+opkg install usb-modeswitch kmod-usb-net kmod-usb-net-rndis kmod-usb-net-cdc-ether
+opkg install kmod-usb-net-huawei-cdc-ncm luci-proto-ncm kmod-usb-acm luci-proto-mbim kmod-usb-net-qmi-wwan kmod-usb-wdm qmi-utils uqmi umbim mbim-utils libqrtr-glib modemmanager luci-proto-modemmanager kmod-usb-serial-option
+opkg install atinout luci-i18n-atinout-ru luci-i18n-mmconfig-ru luci-i18n-modeminfo-ru luci-i18n-smstools3-ru luci-proto-xmm modeminfo-qmi modeminfo-serial-dell modeminfo-serial-telit modeminfo-serial-thales modeminfo-qmi  modeminfo-serial-xmm modeminfo xmm-modem     (последний надо проверить как правильно: modeminfo xmm-modem или modeminfo-xmm-modem)
+
